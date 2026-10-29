@@ -1,0 +1,138 @@
+// ============================================================
+// Vendor Registration — data contract (FROZEN after Wave 0)
+// Changing this file is its own task; see docs/tasks/README.md.
+// Source of truth: Drive log Claude_2026-10-29_1438.md
+// ============================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  KIV
+}
+
+enum SupplyCategory {
+  EQUIPMENT
+  RAW_MATERIALS
+  MRO
+  SERVICES
+  CONTRACTOR
+  OTHER
+}
+
+enum DocumentType {
+  SSM_CERT
+  BANK_PROOF
+  TAX_REG
+  OTHER
+}
+
+/// One row per vendor registration submission.
+model Vendor {
+  id          String       @id @default(cuid())
+  /// Human-readable reference shown to the vendor, e.g. VR-2026-0001
+  referenceNo String       @unique
+  status      VendorStatus @default(PENDING)
+
+  // Company
+  companyName      String
+  registrationNo   String
+  taxId            String
+  businessType     String
+  yearsInOperation Int
+  address          String
+  city             String
+  state            String
+  postcode         String
+  country          String @default("Malaysia")
+
+  // Supply
+  category    SupplyCategory
+  description String
+
+  // Primary contact
+  contactName     String
+  contactEmail    String
+  contactPhone    String
+  contactPosition String
+
+  // Bank
+  bankName        String
+  bankAccountNo   String
+  bankAccountName String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents     Document[]
+  statusHistory StatusHistory[]
+  emailLogs     EmailLog[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// A file uploaded with a registration. Bytes live on disk at storedPath.
+model Document {
+  id           String       @id @default(cuid())
+  vendorId     String
+  vendor       Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  type         DocumentType
+  originalName String
+  /// Path relative to UPLOAD_DIR, never absolute, never user-controlled.
+  storedPath   String
+  mimeType     String
+  sizeBytes    Int
+  uploadedAt   DateTime     @default(now())
+
+  @@index([vendorId])
+}
+
+/// Audit trail. One row per status transition, including the initial PENDING.
+model StatusHistory {
+  id           String        @id @default(cuid())
+  vendorId     String
+  vendor       Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  fromStatus   VendorStatus?
+  toStatus     VendorStatus
+  remark       String?
+  actionedById String?
+  actionedBy   AdminUser?    @relation(fields: [actionedById], references: [id], onDelete: SetNull)
+  actionedAt   DateTime      @default(now())
+
+  @@index([vendorId, actionedAt])
+}
+
+/// Admin users. Single role in Phase 1.
+model AdminUser {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  statusHistory StatusHistory[]
+}
+
+/// Every outbound email attempt, success or failure.
+model EmailLog {
+  id                String    @id @default(cuid())
+  vendorId          String?
+  vendor            Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  to                String
+  template          String
+  sentAt            DateTime  @default(now())
+  providerMessageId String?
+  error             String?
+
+  @@index([vendorId])
+}
