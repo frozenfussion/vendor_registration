@@ -1,11 +1,13 @@
 # Task board — Wave 1
 
-Six independent tasks. Each runs in its own Codex session on its own branch. They share **no files** except the frozen contracts (read-only). Start all six at once.
+Six independent tasks. Each runs in its own Codex session on its own branch (git worktree). They share **no files** except the frozen contracts (read-only). **Task 03 (email) is deferred** — the stubs in `lib/email/index.ts` stay until Aziz sets up Resend.
+
+**Fast path:** `bash scripts/wave1.sh` sets up the dev DB, seeds the admin, creates the worktrees and launches tasks 01/02/04/05/06 in parallel. Then `bash scripts/review-pr.sh <n>` per PR.
 
 | # | Task | Branch | Owns |
 |---|---|---|---|
 | 01 | [Registration form + status page](01-registration-form.md) | `feat/registration-form` | `app/(public)/**`, `app/api/register/`, `components/public/**` |
-| 02 | [Admin dashboard + decision](02-admin-dashboard.md) | `feat/admin-dashboard` | `app/(admin)/layout.tsx`, `app/(admin)/admin/vendors/**`, `app/api/admin/vendors/**`, `components/admin/**` (except `login-form.tsx`), `scripts/**` |
+| 02 | [Admin dashboard + decision](02-admin-dashboard.md) | `feat/admin-dashboard` | `app/(admin)/layout.tsx`, `app/(admin)/admin/vendors/**`, `app/api/admin/vendors/**`, `components/admin/**` (except `login-form.tsx`), `scripts/dev-seed-vendors.ts` |
 | 03 | [Email](03-email.md) | `feat/email` | `lib/email/**` |
 | 04 | [Admin auth](04-auth.md) | `feat/auth` | `lib/auth.ts`, `proxy.ts`, `app/(admin)/admin/login/**`, `app/api/auth/**`, `components/admin/login-form.tsx`, `auth.config.ts` |
 | 05 | [Uploads + download](05-uploads.md) | `feat/uploads` | `lib/storage.ts`, `app/api/admin/documents/**` |
